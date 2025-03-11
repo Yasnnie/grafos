@@ -7,9 +7,31 @@ class Node:
         self.value = value
 
 
+class List:
+    def __init__(self):
+        self.cab = None
+        self.last = None
+
+    def add_last(self, new_value):
+        self.last.prox = new_value
+        self.last = new_value
+
+    def print_nodes(self):
+        text = f"| {self.cab.value} |"
+
+        aux = self.cab.prox
+
+        while aux != None:
+            text = text + f" -> {aux.value}"
+            aux = aux.prox
+
+        print(text)
+
+
+
 class Grafo:
     def __init__(self):
-        self.adj = {}
+        self.adj = []
         self.pesos = {}
 
     def add_vertice(self, v):
@@ -18,14 +40,25 @@ class Grafo:
         else:
             print(f"Vértice {v} já existe.")
 
-    def add_aresta(self, v1, v2, peso):
-        if v1 in self.adj and v2 in self.adj:
-            self.adj[v1].append(v2)
-            self.adj[v2].append(v1)
+
+    def add_aresta(self, v1, v2):
+
+        exist_v1 = self.searc_index_vertice(v1)
+        exist_v2 = self.searc_index_vertice(v2)
+
+        print(f"valor {v1.value} no index {exist_v1}")
+        print(f"valor {v2.value} no index {exist_v2}")
+
+    
+        if exist_v1 != None and exist_v2 != None:
+            new_v1 = Node(v1.value)
+            new_v2 = Node(v2.value)
+            print("======= Cheguei ========")
+            self.adj[exist_v1].add_last(new_v2)
+            self.adj[exist_v2].add_last(new_v1)
             self.pesos[(v1, v2)] = peso
             self.pesos[(v2, v1)] = peso
-        else:
-            print("Erro: Um dos vértices não existe.")
+
 
     def exibir_grafo(self):
         for vertice, vizinhos in self.adj.items():
