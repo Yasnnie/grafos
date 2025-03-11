@@ -83,7 +83,7 @@ class TPS:
                 aux = self.grafo.adj[index].cab.prox
                 while aux:
                     if aux.value not in cidades_visitadas:
-                        peso_aresta = self.grafo.pesos.get((atual, aux.value), float('inf'))
+                        peso_aresta = self.grafo.pesos.get((atual, aux.value))
                         self.tsp_dfs(origem, aux.value, cidades_visitadas, custo_atual + peso_aresta, caminho_atual)
                     aux = aux.prox
 
