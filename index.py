@@ -32,13 +32,38 @@ class List:
 class Grafo:
     def __init__(self):
         self.adj = []
+
         self.pesos = {}
+    def searc_index_vertice(self, vertice):
+        exist = None
+
+        for i in range(len(self.adj)):
+            if vertice == self.adj[i].cab:
+                exist = i 
+                break
+
+        return exist
+
 
     def add_vertice(self, v):
-        if v not in self.adj:
-            self.adj[v] = []
+        if len(self.adj) == 0:
+            lista = List()
+            lista.cab = v
+            lista.last = v
+            self.adj.append(lista)
+            print("Adicionado com sucesso")
+            return
+
+        exist_vertice = self.searc_index_vertice(v)
+
+        if exist_vertice == None:
+            lista = List()
+            lista.cab = v
+            lista.last = v
+            self.adj.append(lista)
+            print("Adicionado com sucesso")
         else:
-            print(f"Vértice {v} já existe.")
+            print("Vertice já existe")
 
 
     def add_aresta(self, v1, v2):
@@ -56,8 +81,8 @@ class Grafo:
             print("======= Cheguei ========")
             self.adj[exist_v1].add_last(new_v2)
             self.adj[exist_v2].add_last(new_v1)
-            self.pesos[(v1, v2)] = peso
-            self.pesos[(v2, v1)] = peso
+            self.pesos[(v1.value, v2)] = peso
+            self.pesos[(v2.value, v1)] = peso
 
 
     def exibir_grafo(self):
