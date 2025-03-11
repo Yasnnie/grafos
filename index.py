@@ -5,90 +5,56 @@ import matplotlib.pyplot as plt
 class Node:
     def __init__(self, value):
         self.value = value
-
+        self.prox = None
 
 class List:
     def __init__(self):
         self.cab = None
         self.last = None
 
-    def add_last(self, new_value):
-        self.last.prox = new_value
-        self.last = new_value
+    def add_last(self, new_node):
+        if self.cab is None:
+            self.cab = new_node
+            self.last = new_node
+        else:
+            self.last.prox = new_node
+            self.last = new_node
 
     def print_nodes(self):
         text = f"| {self.cab.value} |"
-
         aux = self.cab.prox
-
-        while aux != None:
-            text = text + f" -> {aux.value}"
+        while aux:
+            text += f" -> {aux.value}"
             aux = aux.prox
-
         print(text)
-
-
 
 class Grafo:
     def __init__(self):
         self.adj = []
-
         self.pesos = {}
+
     def searc_index_vertice(self, vertice):
-        exist = None
-
         for i in range(len(self.adj)):
-            if vertice == self.adj[i].cab:
-                exist = i 
-                break
-
-        return exist
-
+            if vertice == self.adj[i].cab.value:
+                return i
+        return None
 
     def add_vertice(self, v):
-        if len(self.adj) == 0:
+        if self.searc_index_vertice(v.value) is None:
             lista = List()
             lista.cab = v
             lista.last = v
             self.adj.append(lista)
-            print("Adicionado com sucesso")
-            return
 
-        exist_vertice = self.searc_index_vertice(v)
+    def add_aresta(self, v1, v2, peso):
+        idx_v1 = self.searc_index_vertice(v1.value)
+        idx_v2 = self.searc_index_vertice(v2.value)
 
-        if exist_vertice == None:
-            lista = List()
-            lista.cab = v
-            lista.last = v
-            self.adj.append(lista)
-            print("Adicionado com sucesso")
-        else:
-            print("Vertice já existe")
-
-
-    def add_aresta(self, v1, v2):
-
-        exist_v1 = self.searc_index_vertice(v1)
-        exist_v2 = self.searc_index_vertice(v2)
-
-        print(f"valor {v1.value} no index {exist_v1}")
-        print(f"valor {v2.value} no index {exist_v2}")
-
-    
-        if exist_v1 != None and exist_v2 != None:
-            new_v1 = Node(v1.value)
-            new_v2 = Node(v2.value)
-            print("======= Cheguei ========")
-            self.adj[exist_v1].add_last(new_v2)
-            self.adj[exist_v2].add_last(new_v1)
-            self.pesos[(v1.value, v2)] = peso
-            self.pesos[(v2.value, v1)] = peso
-
-
-    def exibir_grafo(self):
-        for vertice, vizinhos in self.adj.items():
-            print(f"{vertice} -> {', '.join(vizinhos)}")
-
+        if idx_v1 is not None and idx_v2 is not None:
+            self.adj[idx_v1].add_last(Node(v2.value))
+            self.adj[idx_v2].add_last(Node(v1.value))
+            self.pesos[(v1.value, v2.value)] = peso
+            self.pesos[(v2.value, v1.value)] = peso
 
 class TPS:
     def __init__(self, grafo):
@@ -110,43 +76,37 @@ class TPS:
                 custo_total = custo_atual + self.grafo.pesos[(atual, origem)]
                 if custo_total < self.melhor_custo:
                     self.melhor_custo = custo_total
-                    self.melhor_caminho = caminho_atual[:] + [origem]
+                    self.melhor_caminho = caminho_atual[:]
         else:
-            for vizinho in self.grafo.adj[atual]:
-                if vizinho not in cidades_visitadas:
-                    self.tsp_dfs(origem, vizinho, cidades_visitadas, custo_atual + self.grafo.pesos[(atual, vizinho)], caminho_atual)
+            index = self.grafo.searc_index_vertice(atual)
+            if index is not None:
+                aux = self.grafo.adj[index].cab.prox
+                while aux:
+                    if aux.value not in cidades_visitadas:
+                        peso_aresta = self.grafo.pesos.get((atual, aux.value), float('inf'))
+                        self.tsp_dfs(origem, aux.value, cidades_visitadas, custo_atual + peso_aresta, caminho_atual)
+                    aux = aux.prox
 
         cidades_visitadas.remove(atual)
         caminho_atual.pop()
 
     def iniciar_busca(self, origem):
-        self.melhor_custo = float('inf')
-        self.melhor_caminho = []
         self.tsp_dfs(origem, origem)
         print("Melhor caminho encontrado:", self.melhor_caminho)
         print("Custo do melhor caminho:", self.melhor_custo)
-        self.exibir_grafo_tsp()
 
     def exibir_grafo_tsp(self):
         G = nx.Graph()
-        
-        for v1, v2 in self.grafo.pesos.keys():
-            G.add_edge(v1, v2, weight=self.grafo.pesos[(v1, v2)])
+        for (v1, v2), peso in self.grafo.pesos.items():
+            G.add_edge(v1, v2, weight=peso)
 
         pos = nx.spring_layout(G)
         labels = nx.get_edge_attributes(G, 'weight')
-        
         plt.figure(figsize=(8, 6))
         nx.draw(G, pos, with_labels=True, node_color='lightblue', node_size=2000, edge_color='gray')
         nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
-        
-        if self.melhor_caminho:
-            path_edges = list(zip(self.melhor_caminho, self.melhor_caminho[1:]))
-            nx.draw_networkx_edges(G, pos, edgelist=path_edges, edge_color='red', width=2)
-        
         plt.title("Melhor Caminho Encontrado pelo TSP")
         plt.show()
-
 
 def carregar_csv(nome_arquivo, grafo):
     with open(nome_arquivo, newline='', encoding='utf-8') as csvfile:
@@ -156,9 +116,11 @@ def carregar_csv(nome_arquivo, grafo):
             if len(linha) == 3:
                 v1, v2, peso = linha
                 peso = int(peso)
-                grafo.add_vertice(v1)
-                grafo.add_vertice(v2)
-                grafo.add_aresta(v1, v2, peso)
+                n1 = Node(v1)
+                n2 = Node(v2)
+                grafo.add_vertice(n1)
+                grafo.add_vertice(n2)
+                grafo.add_aresta(n1, n2, peso)
 
 def interface():
     grafo = Grafo()
@@ -174,26 +136,23 @@ def interface():
 
         if opcao == '1':
             v = input("Digite o nome do vértice: ")
-            grafo.add_vertice(v)
+            grafo.add_vertice(Node(v))
         elif opcao == '2':
             v1 = input("Digite o primeiro vértice: ")
             v2 = input("Digite o segundo vértice: ")
             peso = int(input("Digite o peso da aresta: "))
-            grafo.add_aresta(v1, v2, peso)
+            grafo.add_aresta(Node(v1), Node(v2), peso)
         elif opcao == '3':
-            grafo.exibir_grafo()
+            for lista in grafo.adj:
+                lista.print_nodes()
         elif opcao == '4':
             origem = input("Digite o vértice de origem: ")
-            if origem in grafo.adj:
-                solver = TPS(grafo)
-                solver.iniciar_busca(origem)
-            else:
-                print("Vértice não encontrado.")
+            solver = TPS(grafo)
+            solver.iniciar_busca(origem)
         elif opcao == '5':
             break
         else:
             print("Opção inválida. Tente novamente.")
-
 
 if __name__ == "__main__":
     interface()
